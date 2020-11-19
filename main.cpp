@@ -4,7 +4,11 @@
 int main(){
     
     chatServer server;
-    server.addClient();
-//    server.addClient();
-    server.run();
+
+    try{
+        server.run();
+    }
+    catch(std::exception& exception){
+        std::cerr << exception.what() << std::endl;
+    }
 }

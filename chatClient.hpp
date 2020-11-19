@@ -15,8 +15,8 @@ public:
     ~chatClient();
     chatClient(const chatClient&) = delete;
     chatClient& operator=(chatClient&) = delete;
-    chatClient(chatClient&&) noexcept = default;
-    chatClient& operator=(chatClient&&) = default;
+    chatClient(chatClient&&) noexcept;
+    chatClient& operator=(chatClient&&) noexcept;
     
     int clientSocket{};
     sockaddr_in clientAddress{};

@@ -21,11 +21,16 @@ chatServer::chatServer(){
     if (listen(serverSocket, SOMAXCONN) == -1){
         throw std::runtime_error("Server failed to listen");
     }
+    fileDescriptors.emplace_back(pollfd{serverSocket, POLLIN, 0});
 }
 
 chatServer::~chatServer(){
     // clean up sockets
     close(serverSocket);
+    
+    for(auto&& client: clientList){
+        close(client.clientSocket);
+    }
     
 }
 
@@ -44,10 +49,14 @@ void chatServer::run(){
         // check which FDs are set TODO:   
         for(auto&& i: fileDescriptors){
             if(i.fd == serverSocket){
-                //addClient();
+                if (i.revents != 0){// checks if it was one of the FDs that had an event
+                    addClient();
+                }
             }
             else{
-                relayMessage(i.fd);
+                if (i.revents != 0){
+                    relayMessage(i.fd);
+                }
             }
         }
         // add client if listener FD is set
@@ -59,7 +68,7 @@ void chatServer::run(){
 
 void chatServer::addClient(){
     
-    clientList.emplace_back(serverSocket);
+    clientList.emplace_back(serverSocket); // TODO: old client disconnects here
     // set file descriptor for the client socket and add it to vector
     
     fileDescriptors.emplace_back(pollfd{clientList.back().clientSocket, POLLIN, 0}); 
@@ -74,6 +83,7 @@ void chatServer::removeClient(int /*clientSocket*/){
 
 void chatServer::relayMessage(int clientSocket){ // only happens when message is waiting to be received
     std::string message{};
+    message.resize(maxMessageSize);// TODO
 
     int bytesRecieved = recv(clientSocket, message.data(), maxMessageSize, 0); // waits for message to be sent
 

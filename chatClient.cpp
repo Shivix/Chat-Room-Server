@@ -26,3 +26,21 @@ chatClient::chatClient(int serverSocket){
 chatClient::~chatClient(){
     close(clientSocket);
 }
+
+chatClient::chatClient(chatClient&& other) noexcept: // move constructor must change the socket of moved object to prevent early closing
+    host(other.host),
+    service(other.service),
+    clientSocket(std::exchange(other.clientSocket, -1)),
+    clientAddress(other.clientAddress),
+    clientSize(other.clientSize) {}
+
+chatClient& chatClient::operator=(chatClient&& other) noexcept {
+    if(this != &other){
+        host = other.host;
+        service = other.service;
+        clientSocket = std::exchange(other.clientSocket, -1);
+        clientAddress = other.clientAddress;
+        clientSize = other.clientSize;
+    }
+    return *this;
+}
