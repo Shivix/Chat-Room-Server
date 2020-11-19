@@ -14,14 +14,14 @@
 class chatServer{ 
     
     static constexpr uint16_t port{12345};
-    static constexpr size_t maxMessageSize{4096};
-    int serverSocket{socket(PF_INET, SOCK_STREAM, 0)}; // creates socket for communication with server using TCP to ensure data isn't lost
+    static constexpr size_t maxMessageSize{2048};
+    int serverSocket{socket(PF_INET, SOCK_STREAM, 0)}; // endpoint for all incoming and outgoing data
 
     sockaddr_in serverAddress{}; // struct with address info to bind the socket
     
     std::vector<chatClient> clientList;
 
-    std::vector<pollfd> fileDescriptors; // TODO: add to client.hpp and have just single pollfd for listener here?
+    pollfd listenFD;
 public:
     chatServer();
     ~chatServer();
@@ -31,7 +31,7 @@ public:
     void run();
     void addClient();
     void removeClient(int);
-    void relayMessage(int);
+    void relayMessage(const chatClient&);
 };
 
 
