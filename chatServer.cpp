@@ -21,7 +21,7 @@ chatServer::chatServer(){
     if (listen(serverSocket, SOMAXCONN) == -1){
         throw std::runtime_error("Server failed to listen");
     }
-    fileDescriptors.emplace_back(pollfd{serverSocket, POLLIN, 0});
+    listenFD = pollfd{serverSocket, POLLIN, 0};
 }
 
 chatServer::~chatServer(){
@@ -37,7 +37,13 @@ chatServer::~chatServer(){
 void chatServer::run(){
     while(true){
         
-        auto amountSet = poll(fileDescriptors.data(), fileDescriptors.size(), 0);
+        if (poll(&listenFD, 1, 0)){// checks if it was one of the FDs that had an event
+            addClient();                                                         
+        }                                                                        
+        int amountSet{0};
+        for(auto&& client: clientList){
+            amountSet += poll(&client.clientFD, 1, 0);
+        }
         
         if(amountSet == -1){
             throw std::runtime_error("Error occurred while polling file descriptors");
@@ -46,22 +52,11 @@ void chatServer::run(){
             continue;
         }
         else{
-        // check which FDs are set TODO:   
-        for(auto&& i: fileDescriptors){
-            if(i.fd == serverSocket){
-                if (i.revents != 0){// checks if it was one of the FDs that had an event
-                    addClient();
+            for(auto&& client: clientList){
+                if (client.clientFD.revents != 0){
+                    relayMessage(client);
                 }
             }
-            else{
-                if (i.revents != 0){
-                    relayMessage(i.fd);
-                }
-            }
-        }
-        // add client if listener FD is set
-        
-        // relay message if client FD is set
         }
     }
 }
@@ -71,8 +66,6 @@ void chatServer::addClient(){
     clientList.emplace_back(serverSocket); // TODO: old client disconnects here
     // set file descriptor for the client socket and add it to vector
     
-    fileDescriptors.emplace_back(pollfd{clientList.back().clientSocket, POLLIN, 0}); 
-    
     std::string_view welcomeMessage{"Welcome to the chat room\n"};
     send(clientList.back().clientSocket, welcomeMessage.data(), welcomeMessage.size() + 1, 0);
 }
@@ -81,18 +74,25 @@ void chatServer::removeClient(int /*clientSocket*/){
     // erase from clientList
 }
 
-void chatServer::relayMessage(int clientSocket){ // only happens when message is waiting to be received
-    std::string message{};
-    message.resize(maxMessageSize);// TODO
+void chatServer::relayMessage(const chatClient& sender){ // only happens when message is waiting to be received
+    std::string messageBuffer{};
+    messageBuffer.resize(maxMessageSize);// TODO
 
-    int bytesRecieved = recv(clientSocket, message.data(), maxMessageSize, 0); // waits for message to be sent
+    int bytesRecieved = recv(sender.clientSocket, messageBuffer.data(), maxMessageSize, 0); // waits for message to be sent
 
     if (bytesRecieved > 0){ // TODO: check bytes received outside of function?
-        std::cout << "Message: " << message.data() << std::endl; // displays message server side
+        std::cout << sender.username << ": " << messageBuffer << std::endl; // displays message server side
+
+        std::string message{sender.username};
+        message.pop_back();
+        message.append(": ");
+        message.append(messageBuffer);
+        
         // loop through clientList to send message to each client
         for(auto&& client: clientList){ // TODO: dont relay message back to sender
-            //sendto(clientSocket, message.data(), message.size(), 0, reinterpret_cast<const sockaddr*>(&client.clientAddress), client.clientSize);
-            send(client.clientSocket, message.data(), bytesRecieved, 0);
+            if (client != sender){
+                send(client.clientSocket, message.data(), message.size() + 1, 0);
+            }
         }
     }
 }

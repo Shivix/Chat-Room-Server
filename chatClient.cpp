@@ -12,6 +12,13 @@ chatClient::chatClient(int serverSocket){
         throw std::runtime_error("Failed to connect client");
     }
 
+    auto usernameSize = recv(clientSocket, username.data(), 50, MSG_PEEK);
+    
+    username.resize(usernameSize);
+    if (recv(clientSocket, username.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters TODO: username not getting set
+        throw std::runtime_error("Could not receive username");
+    }
+    
     int result{getnameinfo(reinterpret_cast<const sockaddr*>(&clientAddress), sizeof(clientAddress), host.data(), NI_MAXHOST, service.data(), NI_MAXSERV, 0)};
 
     if (result){// displays info serverside about connected client
@@ -21,6 +28,9 @@ chatClient::chatClient(int serverSocket){
         inet_ntop(PF_INET, &clientAddress.sin_addr, host.data(), NI_MAXHOST);
         std::cout << host.front() << " connected on port: " << clientAddress.sin_port << std::endl;
     }
+    
+    clientFD.fd = clientSocket;
+    clientFD.events = POLLIN;
 }
 
 chatClient::~chatClient(){
@@ -32,7 +42,9 @@ chatClient::chatClient(chatClient&& other) noexcept: // move constructor must ch
     service(other.service),
     clientSocket(std::exchange(other.clientSocket, -1)),
     clientAddress(other.clientAddress),
-    clientSize(other.clientSize) {}
+    clientSize(other.clientSize),
+    username(std::move(other.username)),
+    clientFD(other.clientFD) {}
 
 chatClient& chatClient::operator=(chatClient&& other) noexcept {
     if(this != &other){
@@ -41,6 +53,8 @@ chatClient& chatClient::operator=(chatClient&& other) noexcept {
         clientSocket = std::exchange(other.clientSocket, -1);
         clientAddress = other.clientAddress;
         clientSize = other.clientSize;
+        username = std::move(other.username);
+        clientFD = other.clientFD;
     }
     return *this;
 }
