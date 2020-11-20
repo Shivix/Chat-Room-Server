@@ -17,11 +17,12 @@ class chatServer{
     static constexpr size_t maxMessageSize{2048};
     int serverSocket{socket(PF_INET, SOCK_STREAM, 0)}; // endpoint for all incoming and outgoing data
 
+    std::string_view serverIP{"127.0.0.1"}; // currently localhost 
     sockaddr_in serverAddress{}; // struct with address info to bind the socket
-    
+
     std::vector<chatClient> clientList;
 
-    pollfd listenFD;
+    pollfd listenFD; // file descriptor to store events associated with the listening socket
     
 public:
     chatServer();

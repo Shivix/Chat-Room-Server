@@ -15,7 +15,7 @@ chatClient::chatClient(int serverSocket){
     auto usernameSize = recv(clientSocket, username.data(), 50, MSG_PEEK);
     
     username.resize(usernameSize);
-    if (recv(clientSocket, username.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters TODO: username not getting set
+    if (recv(clientSocket, username.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters
         throw std::runtime_error("Could not receive username");
     }
     

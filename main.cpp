@@ -4,7 +4,7 @@
 int main(){
     
     try{
-        chatServer server;
+        chatServer server{};
 
         server.run();
     }

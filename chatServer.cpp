@@ -4,7 +4,9 @@
 #include <arpa/inet.h>
 #include "chatServer.hpp"
 
-chatServer::chatServer(){
+chatServer::chatServer():
+        listenFD(pollfd{serverSocket, POLLIN, 0})
+{
     if (serverSocket == -1){
         throw std::runtime_error("Failed to create socket");
     }
@@ -12,7 +14,7 @@ chatServer::chatServer(){
 
     serverAddress.sin_family = PF_INET;
     serverAddress.sin_port = htons(port);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    inet_pton(PF_INET, serverIP.data(), &serverAddress.sin_addr);// sets the IP address that is used to connect to the server
 
     if (bind(serverSocket, reinterpret_cast<const sockaddr*>(&serverAddress), sizeof(serverAddress)) == -1){ // binds the address stored in serverAddress to the socket
         throw std::runtime_error("Failed to bind IP");
@@ -21,7 +23,7 @@ chatServer::chatServer(){
     if (listen(serverSocket, SOMAXCONN) == -1){ // sets the socket to listen for incoming clients
         throw std::runtime_error("Server failed to listen");
     }
-    listenFD = pollfd{serverSocket, POLLIN, 0}; // file descriptor to store events associated with the listening socket
+    
 }
 
 chatServer::~chatServer(){
@@ -58,10 +60,11 @@ void chatServer::run(){
 
 void chatServer::addClient(){
     
-    clientList.emplace_back(serverSocket); // TODO: old client disconnects here
+    clientList.emplace_back(serverSocket);
     // set file descriptor for the client socket and add it to vector
     
-    std::string_view welcomeMessage{"Welcome to the chat room\n"};
+    std::string welcomeMessage{"Welcome to the chat room "};
+    welcomeMessage.append(clientList.back().username);
     send(clientList.back().clientSocket, welcomeMessage.data(), welcomeMessage.size() + 1, 0);
 }
 
@@ -71,15 +74,15 @@ void chatServer::removeClient(const chatClient& client){
 
 void chatServer::relayMessage(const chatClient& sender){ // only happens when message is waiting to be received
     std::string messageBuffer{};
-    messageBuffer.resize(maxMessageSize);// TODO
+    messageBuffer.resize(maxMessageSize); // buffer must be initialized with default values with a size bigger than the message because C
 
-    int bytesRecieved = recv(sender.clientSocket, messageBuffer.data(), maxMessageSize, 0); // waits for message to be sent
+    auto bytesReceived{recv(sender.clientSocket, messageBuffer.data(), maxMessageSize, 0)}; // waits for message to be sent
     
-    if (bytesRecieved == 0){ // signifies a disconnect by the client
+    if (bytesReceived == 0){ // signifies a disconnect by the client
         removeClient(sender);
         std::cout << sender.username << " has disconnected" << std::endl;
     }
-    else if (bytesRecieved > 0){ // checks if the message was successfully received
+    else if (bytesReceived > 0){ // checks if the message was successfully received
         std::cout << sender.username << ": " << messageBuffer << std::endl; // displays message server side
 
         std::string message{sender.username}; // adds the username to the beginning of the message
