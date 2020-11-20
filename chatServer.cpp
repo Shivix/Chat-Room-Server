@@ -14,24 +14,19 @@ chatServer::chatServer(){
     serverAddress.sin_port = htons(port);
     serverAddress.sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(serverSocket, reinterpret_cast<const sockaddr*>(&serverAddress), sizeof(serverAddress)) == -1){
+    if (bind(serverSocket, reinterpret_cast<const sockaddr*>(&serverAddress), sizeof(serverAddress)) == -1){ // binds the address stored in serverAddress to the socket
         throw std::runtime_error("Failed to bind IP");
     }
 
-    if (listen(serverSocket, SOMAXCONN) == -1){
+    if (listen(serverSocket, SOMAXCONN) == -1){ // sets the socket to listen for incoming clients
         throw std::runtime_error("Server failed to listen");
     }
-    listenFD = pollfd{serverSocket, POLLIN, 0};
+    listenFD = pollfd{serverSocket, POLLIN, 0}; // file descriptor to store events associated with the listening socket
 }
 
 chatServer::~chatServer(){
     // clean up sockets
     close(serverSocket);
-    
-    for(auto&& client: clientList){
-        close(client.clientSocket);
-    }
-    
 }
 
 void chatServer::run(){
@@ -70,8 +65,8 @@ void chatServer::addClient(){
     send(clientList.back().clientSocket, welcomeMessage.data(), welcomeMessage.size() + 1, 0);
 }
 
-void chatServer::removeClient(int /*clientSocket*/){
-    // erase from clientList
+void chatServer::removeClient(const chatClient& client){
+    clientList.erase(std::find(clientList.begin(), clientList.end(), client));
 }
 
 void chatServer::relayMessage(const chatClient& sender){ // only happens when message is waiting to be received
@@ -79,21 +74,28 @@ void chatServer::relayMessage(const chatClient& sender){ // only happens when me
     messageBuffer.resize(maxMessageSize);// TODO
 
     int bytesRecieved = recv(sender.clientSocket, messageBuffer.data(), maxMessageSize, 0); // waits for message to be sent
-
-    if (bytesRecieved > 0){ // TODO: check bytes received outside of function?
+    
+    if (bytesRecieved == 0){ // signifies a disconnect by the client
+        removeClient(sender);
+        std::cout << sender.username << " has disconnected" << std::endl;
+    }
+    else if (bytesRecieved > 0){ // checks if the message was successfully received
         std::cout << sender.username << ": " << messageBuffer << std::endl; // displays message server side
 
-        std::string message{sender.username};
+        std::string message{sender.username}; // adds the username to the beginning of the message
         message.pop_back();
         message.append(": ");
         message.append(messageBuffer);
         
         // loop through clientList to send message to each client
-        for(auto&& client: clientList){ // TODO: dont relay message back to sender
+        for(auto&& client: clientList){
             if (client != sender){
                 send(client.clientSocket, message.data(), message.size() + 1, 0);
             }
         }
+    }
+    else{
+        throw std::runtime_error("Failed to receive message");
     }
 }
 

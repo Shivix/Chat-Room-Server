@@ -3,12 +3,16 @@
 
 int main(){
     
-    chatServer server;
-
     try{
+        chatServer server;
+
         server.run();
     }
     catch(std::exception& exception){
-        std::cerr << exception.what() << std::endl;
+        std::cerr << "Exception thrown: " << exception.what() << std::endl;
+        // ensures stack is unwound and destructors are called
+        
+        return -1;
     }
+    return 0;
 }

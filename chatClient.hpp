@@ -20,9 +20,12 @@ public:
     chatClient& operator=(chatClient&&) noexcept;
     
     constexpr bool operator!=(const chatClient& other) const{
-        return clientSocket != other.clientSocket;
+        return !(*this == other);
     }
-    
+
+    constexpr bool operator==(const chatClient& other) const{
+        return clientSocket == other.clientSocket;
+    }
     
     int clientSocket{};
     sockaddr_in clientAddress{};

@@ -22,6 +22,7 @@ class chatServer{
     std::vector<chatClient> clientList;
 
     pollfd listenFD;
+    
 public:
     chatServer();
     ~chatServer();
@@ -30,7 +31,7 @@ public:
     
     void run();
     void addClient();
-    void removeClient(int);
+    void removeClient(const chatClient&);
     void relayMessage(const chatClient&);
 };
 
