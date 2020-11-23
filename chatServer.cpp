@@ -12,7 +12,7 @@ chatServer::chatServer():
     }
     std::cout << "Server socket initialized" << std::endl;
 
-    serverAddress.sin_family = PF_INET;
+    serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(port);
     inet_pton(PF_INET, serverIP.data(), &serverAddress.sin_addr);// sets the IP address that is used to connect to the server
 
@@ -66,10 +66,26 @@ void chatServer::addClient(){
     std::string welcomeMessage{"Welcome to the chat room "};
     welcomeMessage.append(clientList.back().username);
     send(clientList.back().clientSocket, welcomeMessage.data(), welcomeMessage.size() + 1, 0);
+    
+    std::string notification{clientList.back().username};
+    notification.append(" has entered the chat");
+    for (auto client = clientList.begin(); client != clientList.end() - 1; ++client){
+        send(client->clientSocket, notification.data(), welcomeMessage.size() + 1, 0);
+    }
 }
 
 void chatServer::removeClient(const chatClient& client){
     clientList.erase(std::find(clientList.begin(), clientList.end(), client));
+
+    std::cout << client.username << " has disconnected" << std::endl;
+    
+    std::string notification{client.username};
+    notification.append(" has left the chat");
+    
+    for (auto&& i: clientList){
+        send(i.clientSocket, notification.data(), notification.size() + 1, 0);
+    }
+
 }
 
 void chatServer::relayMessage(const chatClient& sender){ // only happens when message is waiting to be received
@@ -80,7 +96,6 @@ void chatServer::relayMessage(const chatClient& sender){ // only happens when me
     
     if (bytesReceived == 0){ // signifies a disconnect by the client
         removeClient(sender);
-        std::cout << sender.username << " has disconnected" << std::endl;
     }
     else if (bytesReceived > 0){ // checks if the message was successfully received
         std::cout << sender.username << ": " << messageBuffer << std::endl; // displays message server side

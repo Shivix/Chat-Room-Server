@@ -15,7 +15,7 @@ class chatServer{
     
     static constexpr uint16_t port{12345};
     static constexpr size_t maxMessageSize{2048};
-    int serverSocket{socket(PF_INET, SOCK_STREAM, 0)}; // endpoint for all incoming and outgoing data
+    int serverSocket{socket(PF_INET, SOCK_STREAM, 0)}; // endpoint for all incoming and outgoing data -- TCP to avoid partial messages being received
 
     std::string_view serverIP{"127.0.0.1"}; // currently localhost 
     sockaddr_in serverAddress{}; // struct with address info to bind the socket

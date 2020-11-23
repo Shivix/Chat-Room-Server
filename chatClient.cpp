@@ -22,11 +22,11 @@ chatClient::chatClient(int serverSocket){
     int result{getnameinfo(reinterpret_cast<const sockaddr*>(&clientAddress), sizeof(clientAddress), host.data(), NI_MAXHOST, service.data(), NI_MAXSERV, 0)};
 
     if (result){// displays info serverside about connected client
-        std::cout << host.front() << " connected on " << service.front() << std::endl;
+        std::cout << username << " has connected on " << service.front() << std::endl;
     }
     else{
         inet_ntop(PF_INET, &clientAddress.sin_addr, host.data(), NI_MAXHOST);
-        std::cout << host.front() << " connected on port: " << clientAddress.sin_port << std::endl;
+        std::cout << username << " has connected on port: " << clientAddress.sin_port << std::endl;
     }
     
     clientFD.fd = clientSocket;
