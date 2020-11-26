@@ -6,4 +6,15 @@ set(CMAKE_CXX_STANDARD 20)
 #set(CMAKE_CXX_FLAGS -pthread)
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
-add_executable(ChatServer main.cpp chatServer.cpp chatServer.hpp chatClient.cpp chatClient.hpp)
+set(SRC 
+        src/main.cpp
+        src/chatClient.cpp
+        src/chatServer.cpp
+        src/messageProtocol.cpp)
+
+set(INCLUDE
+        include/chatClient.hpp
+        include/chatServer.hpp
+        include/messageProtocol.hpp)
+
+add_executable(ChatServer ${SRC} ${INCLUDE})

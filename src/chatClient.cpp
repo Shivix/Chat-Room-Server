@@ -1,8 +1,8 @@
 #include <iostream>
 #include <arpa/inet.h>
 #include <zconf.h>
-#include "chatClient.hpp"
-
+#include "../include/chatClient.hpp"
+#include "../include/messageProtocol.hpp"
 
 chatClient::chatClient(int serverSocket){
     
@@ -11,13 +11,8 @@ chatClient::chatClient(int serverSocket){
     if (clientSocket == -1){
         throw std::runtime_error("Failed to connect client");
     }
-
-    auto usernameSize = recv(clientSocket, username.data(), 50, MSG_PEEK);
     
-    username.resize(usernameSize);
-    if (recv(clientSocket, username.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters
-        throw std::runtime_error("Could not receive username");
-    }
+    setUsername();
     
     int result{getnameinfo(reinterpret_cast<const sockaddr*>(&clientAddress), sizeof(clientAddress), host.data(), NI_MAXHOST, service.data(), NI_MAXSERV, 0)};
 
@@ -38,13 +33,13 @@ chatClient::~chatClient(){
 }
 
 chatClient::chatClient(chatClient&& other) noexcept: // move constructor must change the socket of moved object to prevent early closing
-    host(other.host),
-    service(other.service),
-    clientSocket(std::exchange(other.clientSocket, -1)),
-    clientAddress(other.clientAddress),
-    clientSize(other.clientSize),
-    username(std::move(other.username)),
-    clientFD(other.clientFD) {}
+    host{other.host},
+    service{other.service},
+    clientSocket{std::exchange(other.clientSocket, -1)},
+    clientAddress{other.clientAddress},
+    clientSize{other.clientSize},
+    username{std::move(other.username)},
+    clientFD{other.clientFD} {}
 
 chatClient& chatClient::operator=(chatClient&& other) noexcept {
     if(this != &other){
@@ -57,4 +52,20 @@ chatClient& chatClient::operator=(chatClient&& other) noexcept {
         clientFD = other.clientFD;
     }
     return *this;
+}
+
+void chatClient::setUsername(){
+    std::string usernameBuffer{};
+    do{
+        std::string buffer{};
+        auto usernameSize = recv(clientSocket, buffer.data(), 20, MSG_PEEK);
+        buffer.resize(usernameSize);
+        if (recv(clientSocket, buffer.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters
+            throw std::runtime_error("Could not receive username");
+        }
+        usernameBuffer += buffer;
+    }
+    while (!messageProtocol::verifyPayload(usernameBuffer));
+    messageProtocol payload{usernameBuffer};
+    username = payload.message;
 }

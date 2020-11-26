@@ -14,7 +14,7 @@ class chatClient{
 public:
     explicit chatClient(int);
     ~chatClient();
-    chatClient(const chatClient&) = delete; // copies must be prevented to avoid erroneous closing of sockets
+    chatClient(const chatClient&) = delete; // any copies would be an error so avoided by deleting the copy ctor
     chatClient& operator=(chatClient&) = delete; 
     chatClient(chatClient&&) noexcept;
     chatClient& operator=(chatClient&&) noexcept;
@@ -26,6 +26,8 @@ public:
     constexpr bool operator==(const chatClient& other) const{
         return clientSocket == other.clientSocket;
     }
+    
+    void setUsername();
     
     int clientSocket{};
     sockaddr_in clientAddress{};

@@ -9,6 +9,8 @@
 #include <vector>
 #include <poll.h>
 #include "chatClient.hpp"
+#include "messageProtocol.hpp"
+#include <optional>
 
 
 class chatServer{ 
@@ -29,11 +31,14 @@ public:
     ~chatServer();
     chatServer(const chatServer&) = delete;
     chatServer& operator=(chatServer) = delete;
-    
+
     void run();
+    
+private:
     void addClient();
     void removeClient(const chatClient&);
     void relayMessage(const chatClient&);
+    std::optional<messageProtocol> receivePayload(const chatClient&);
 };
 
 
