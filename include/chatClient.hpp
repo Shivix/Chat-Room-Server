@@ -28,11 +28,11 @@ public:
     }
     
     void setUsername();
-    
+    pollfd clientFD{};
+    std::string username{};
+private:
     sockaddr_in clientAddress{};
     socklen_t clientSize{sizeof(clientAddress)};
-    std::string username{};
-    pollfd clientFD{};
 };
 
 
