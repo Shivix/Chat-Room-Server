@@ -22,7 +22,6 @@ chatServer::chatServer():
     if (listen(serverSocket, SOMAXCONN) == -1){ // sets the socket to listen for incoming clients
         throw std::runtime_error("Server failed to listen");
     }
-    
 }
 
 chatServer::~chatServer(){
@@ -63,15 +62,15 @@ void chatServer::addClient(){
     // set file descriptor for the client socket and add it to vector
     
     std::string welcomeMessage{"You have successfully connected "};
-    welcomeMessage.append(clientList.back().username);
+    welcomeMessage.append(clientList.back().username); // personalizes the welcome message
     messageProtocol welcomeNotification{messageProtocol::messageType::notify, clientList.back().username, "Server", welcomeMessage};
-    send(clientList.back().clientSocket, welcomeNotification.mergedData.data(), welcomeNotification.mergedData.size() + 1, 0);
+    send(clientList.back().clientFD.fd, welcomeNotification.mergedData.data(), welcomeNotification.mergedData.size() + 1, 0);
     
     std::string notificationMessage{clientList.back().username};
     notificationMessage.append(" has entered the chat");
     messageProtocol payload{messageProtocol::messageType::chatRm, "Main", "Server", notificationMessage};
     for (auto client = clientList.begin(); client != clientList.end() - 1; ++client){
-        send(client->clientSocket, payload.mergedData.data(), payload.mergedData.size() + 1, 0);
+        send(client->clientFD.fd, payload.mergedData.data(), payload.mergedData.size() + 1, 0);
     }
 }
 
@@ -82,7 +81,7 @@ void chatServer::removeClient(const chatClient& client){
     notificationMessage.append(" has left the chat");
     messageProtocol payload{messageProtocol::messageType::chatRm, "Main", "Server", notificationMessage};
     for (auto&& i: clientList){
-        send(i.clientSocket, payload.mergedData.data(), payload.mergedData.size() + 1, 0);
+        send(i.clientFD.fd, payload.mergedData.data(), payload.mergedData.size() + 1, 0);
     }
     clientList.erase(std::find(clientList.begin(), clientList.end(), client));
 }
@@ -95,19 +94,19 @@ void chatServer::relayMessage(const chatClient& sender){ // only happens when me
         return;
     }
     
-    std::cout << message->getMessageWithSender() << std::endl; // displays message server side
     if (message->recipient == "Main"){
+        std::cout << message->getMessageWithSender() << std::endl; // displays message server side if it wasn't a private message
         // loop through clientList to send message to each client
         for(auto&& client: clientList){
             if (client != sender){
-                send(client.clientSocket, message->mergedData.data(), message->mergedData.size(), 0);
+                send(client.clientFD.fd, message->mergedData.data(), message->mergedData.size(), 0);
             }
         }
     }
     else{
         send(std::find_if(clientList.begin(), clientList.end(), [message](const chatClient& client){
             return client.username == message->recipient;
-        })->clientSocket, message->mergedData.data(), message->mergedData.size(), 0);
+        })->clientFD.fd, message->mergedData.data(), message->mergedData.size(), 0);
     }
 }
 
@@ -115,9 +114,9 @@ std::optional<messageProtocol> chatServer::receivePayload(const chatClient& send
     std::string mainBuffer{};
     do{
         std::string tempBuffer{};
-        auto bytesReceived{recv(sender.clientSocket, tempBuffer.data(), maxMessageSize, MSG_PEEK)}; // peeks at the message and stores its size
+        auto bytesReceived{recv(sender.clientFD.fd, tempBuffer.data(), maxMessageSize, MSG_PEEK)}; // peeks at the message and stores its size
         tempBuffer.resize(bytesReceived); // buffer must be resized before recv because the function interfaces with the raw array. reserve does not work
-        recv(sender.clientSocket, tempBuffer.data(), bytesReceived, 0); // waits for message to be sent
+        recv(sender.clientFD.fd, tempBuffer.data(), bytesReceived, 0); // waits for message to be sent
         
         if (bytesReceived == -1){ // recv returns -1 on errors
             throw std::runtime_error("Failed to receive payload");

@@ -24,17 +24,15 @@ public:
     }
 
     constexpr bool operator==(const chatClient& other) const{
-        return clientSocket == other.clientSocket;
+        return clientFD.fd == other.clientFD.fd;
     }
     
     void setUsername();
     
-    int clientSocket{};
     sockaddr_in clientAddress{};
     socklen_t clientSize{sizeof(clientAddress)};
     std::string username{};
     pollfd clientFD{};
-
 };
 
 

@@ -6,9 +6,10 @@
 
 chatClient::chatClient(int serverSocket){
     
-    clientSocket = accept(serverSocket, reinterpret_cast<sockaddr*>(&clientAddress), &clientSize); // listens for and accepts incoming client request
+    clientFD.fd = accept(serverSocket, reinterpret_cast<sockaddr*>(&clientAddress), &clientSize); // listens for and accepts incoming client request
+    clientFD.events = POLLIN;
     
-    if (clientSocket == -1){
+    if (clientFD.fd == -1){
         throw std::runtime_error("Failed to connect client");
     }
     
@@ -24,32 +25,28 @@ chatClient::chatClient(int serverSocket){
         std::cout << username << " has connected on port: " << clientAddress.sin_port << std::endl;
     }
     
-    clientFD.fd = clientSocket;
-    clientFD.events = POLLIN;
 }
 
 chatClient::~chatClient(){
-    close(clientSocket);
+    close(clientFD.fd);
 }
 
 chatClient::chatClient(chatClient&& other) noexcept: // move constructor must change the socket of moved object to prevent early closing
     host{other.host},
     service{other.service},
-    clientSocket{std::exchange(other.clientSocket, -1)},
     clientAddress{other.clientAddress},
     clientSize{other.clientSize},
     username{std::move(other.username)},
-    clientFD{other.clientFD} {}
+    clientFD{std::exchange(other.clientFD, {-1, 0, 0})} {}
 
 chatClient& chatClient::operator=(chatClient&& other) noexcept {
     if(this != &other){
         host = other.host;
         service = other.service;
-        clientSocket = std::exchange(other.clientSocket, -1);
         clientAddress = other.clientAddress;
         clientSize = other.clientSize;
         username = std::move(other.username);
-        clientFD = other.clientFD;
+        clientFD = std::exchange(other.clientFD, {-1, 0, 0});
     }
     return *this;
 }
@@ -58,9 +55,9 @@ void chatClient::setUsername(){
     std::string usernameBuffer{};
     do{
         std::string buffer{};
-        auto usernameSize = recv(clientSocket, buffer.data(), 20, MSG_PEEK);
+        auto usernameSize = recv(clientFD.fd, buffer.data(), 20, MSG_PEEK);
         buffer.resize(usernameSize);
-        if (recv(clientSocket, buffer.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters
+        if (recv(clientFD.fd, buffer.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters
             throw std::runtime_error("Could not receive username");
         }
         usernameBuffer += buffer;
