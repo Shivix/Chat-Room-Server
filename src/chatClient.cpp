@@ -63,6 +63,6 @@ void chatClient::setUsername(){
         usernameBuffer += buffer;
     }
     while (!messageProtocol::verifyPayload(usernameBuffer));
-    messageProtocol payload{usernameBuffer};
+    const messageProtocol payload{usernameBuffer};
     username = payload.message;
 }

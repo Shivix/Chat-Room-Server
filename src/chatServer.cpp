@@ -88,7 +88,7 @@ void chatServer::removeClient(const chatClient& client){
 
 void chatServer::relayMessage(const chatClient& sender){ // only happens when message is waiting to be received
     
-    auto message{receivePayload(sender)};
+    const auto message{receivePayload(sender)};
     
     if (!message.has_value()){
         return;
