@@ -113,9 +113,8 @@ void chatServer::relayMessage(const chatClient& sender){ // only happens when me
 std::optional<messageProtocol> chatServer::receivePayload(const chatClient& sender){
     std::string mainBuffer{};
     do{
-        std::string tempBuffer{};
-        auto bytesReceived{recv(sender.clientFD.fd, tempBuffer.data(), maxMessageSize, MSG_PEEK)}; // peeks at the message and stores its size
-        tempBuffer.resize(bytesReceived); // buffer must be resized before recv because the function interfaces with the raw array. reserve does not work
+        auto bytesReceived{recv(sender.clientFD.fd, mainBuffer.data(), maxMessageSize, MSG_PEEK)}; // peeks at the message and stores its size
+        std::string tempBuffer(bytesReceived, '\0'); // buffer must be resized before recv because the function interfaces with the raw array. reserve does not work
         recv(sender.clientFD.fd, tempBuffer.data(), bytesReceived, 0); // waits for message to be sent
         
         if (bytesReceived == -1){ // recv returns -1 on errors
