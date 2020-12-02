@@ -1,4 +1,4 @@
-#include "../include/messageProtocol.hpp"
+#include "messageProtocol.hpp"
 #include <utility>
 
 messageProtocol::messageProtocol(messageType type, std::string recipient, std::string sender, std::string message):

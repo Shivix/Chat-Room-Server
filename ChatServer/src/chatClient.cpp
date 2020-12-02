@@ -2,7 +2,7 @@
 #include <arpa/inet.h>
 #include <zconf.h>
 #include "../include/chatClient.hpp"
-#include "../include/messageProtocol.hpp"
+#include "../../MessageProtocol/messageProtocol.hpp"
 
 chatClient::chatClient(int serverSocket){
     

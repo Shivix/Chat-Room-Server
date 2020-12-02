@@ -9,7 +9,7 @@
 #include <vector>
 #include <poll.h>
 #include "chatClient.hpp"
-#include "messageProtocol.hpp"
+#include "../../MessageProtocol/messageProtocol.hpp"
 #include <optional>
 
 
