@@ -55,7 +55,7 @@ void chatClient::setUsername(){
     std::string usernameBuffer{};
     do{
         std::string buffer{};
-        auto usernameSize = recv(clientFD.fd, buffer.data(), 20, MSG_PEEK);
+        auto usernameSize{recv(clientFD.fd, buffer.data(), 20, MSG_PEEK)};
         buffer.resize(usernameSize);
         if (recv(clientFD.fd, buffer.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters
             throw std::runtime_error("Could not receive username");

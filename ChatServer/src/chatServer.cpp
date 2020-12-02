@@ -74,12 +74,13 @@ void chatServer::addClient(){
     
     clientList.emplace_back(serverSocket);
     // set file descriptor for the client socket and add it to vector
-    
+    // personal welcome message
     std::string welcomeMessage{"You have successfully connected "};
     welcomeMessage.append(clientList.back().username); // personalizes the welcome message
     messageProtocol welcomeNotification{messageProtocol::messageType::notify, clientList.back().username, "Server", welcomeMessage};
     send(clientList.back().clientFD.fd, welcomeNotification.mergedData.data(), welcomeNotification.mergedData.size() + 1, 0);
     
+    // notification message for other users in the chatroom
     std::string notificationMessage{clientList.back().username};
     notificationMessage.append(" has entered the chat");
     messageProtocol payload{messageProtocol::messageType::notify, "Main", "Server", notificationMessage};
@@ -94,10 +95,10 @@ void chatServer::removeClient(const chatClient& client){
     std::string notificationMessage{client.username};
     notificationMessage.append(" has left the chat");
     messageProtocol payload{messageProtocol::messageType::notify, "Main", "Server", notificationMessage};
+    clientList.erase(std::find(clientList.begin(), clientList.end(), client)); // remove the user from the chatroom so we can just send to everyone
     for (auto&& i: clientList){
         send(i.clientFD.fd, payload.mergedData.data(), payload.mergedData.size() + 1, 0);
     }
-    clientList.erase(std::find(clientList.begin(), clientList.end(), client));
 }
 
 void chatServer::relayMessage(const chatClient& sender){ // only happens when message is waiting to be received

@@ -1,5 +1,6 @@
 #include "messageProtocol.hpp"
 #include <utility>
+#include <stdexcept>
 
 messageProtocol::messageProtocol(messageType type, std::string recipient, std::string sender, std::string message):
 type{type},
@@ -38,10 +39,10 @@ void messageProtocol::mergeData(){
 }
 
 void messageProtocol::splitData(){
-    size_t currentSplitterPos{mergedData.find(':')};
+    size_t currentSplitterPos{mergedData.find(splitter)};
     auto setMessagePart = [&currentSplitterPos, this](auto& messagePart){
-        size_t previousSplitterPos = currentSplitterPos;
-        currentSplitterPos = mergedData.find(':', currentSplitterPos + 1);
+        size_t previousSplitterPos{currentSplitterPos};
+        currentSplitterPos = mergedData.find(splitter, currentSplitterPos + 1);
         messagePart = mergedData.substr(previousSplitterPos + 1, (currentSplitterPos - previousSplitterPos) - 1);
     };
     
@@ -55,8 +56,11 @@ void messageProtocol::splitData(){
     else if (typeString == "direct"){
         type = messageType::direct;
     }
-    else{
+    else if (typeString == "notify"){
         type = messageType::notify;
+    }
+    else{
+        throw std::runtime_error("Bad message type");
     }
     
     setMessagePart(recipient);
@@ -66,14 +70,15 @@ void messageProtocol::splitData(){
 
 std::string messageProtocol::getMessageWithSender() const{
     std::string result{sender};
-    result.append(": ");
+    result.push_back(splitter);
+    result.push_back(' ');
     result.append(message);
     return result;
 }
 
 bool messageProtocol::verifyPayload(std::string payload){
     payload.erase(std::remove(payload.begin(), payload.end(), '\0'), payload.end());
-    size_t splitterPos{payload.find(':')};
+    size_t splitterPos{payload.find(splitter)}; // find the position of the first splitter to ignore the characters of the number showing the length
     size_t expectedLength = std::atoi(payload.substr(0, splitterPos).data());
     if (payload.size() - splitterPos == expectedLength + typeLength + 4){ // checks the size after the length considering the 4 splitters
         return true;
