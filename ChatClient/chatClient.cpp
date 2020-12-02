@@ -2,6 +2,8 @@
 #include <iostream>
 #include <zconf.h>
 #include <arpa/inet.h>
+#include <chrono>
+#include <iomanip>
 #include "chatClient.hpp"
 
 chatClient::chatClient(){
@@ -83,11 +85,12 @@ bool chatClient::validateUsername() const{
 }
 
 void chatClient::printMessage(const messageProtocol& payload) {
-    if (payload.sender == "Server"){
+    if (payload.type == messageProtocol::messageType::notify){
         std::cout << payload.message << std::endl;
     }
     else{
-        std::cout << payload.getMessageWithSender() << std::endl;
+        auto currentTime {std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())};
+        std::cout << std::put_time(std::localtime(&currentTime), "%H:%M ") << payload.getMessageWithSender() << std::endl;
     }
 }
 

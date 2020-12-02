@@ -1,7 +1,6 @@
 #ifndef CHATSERVER_CHATSERVER_HPP
 #define CHATSERVER_CHATSERVER_HPP
 
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <array>
@@ -11,6 +10,8 @@
 #include "chatClient.hpp"
 #include "../../MessageProtocol/messageProtocol.hpp"
 #include <optional>
+#include <fstream>
+#include <filesystem>
 
 
 class chatServer{ 
@@ -25,6 +26,9 @@ class chatServer{
     std::vector<chatClient> clientList;
 
     pollfd listenFD; // file descriptor to store events associated with the listening socket
+    
+    const std::filesystem::path logFilePath{"log.txt"};
+    std::ofstream logFile;
     
 public:
     chatServer();

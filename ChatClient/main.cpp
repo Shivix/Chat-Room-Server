@@ -24,9 +24,9 @@ int main(){
                 if (message == "exit()"){ // provides a way for the user to exit the program by typing exit()
                     isRunning = false;
                 }
-                else if (message.starts_with('!')){
+                /*else if (message.starts_with('!')){
                     client.activeChatRoom = message.substr(1, message.size() - 1);
-                }
+                }*/
                 else if (message.starts_with('/')){
                     client.sendMessage(messageProtocol::messageType::direct, message.substr(message.find(' ') + 1, message.back()),
                                        message.substr(1, message.find(' ') - 1));

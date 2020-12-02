@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <chrono>
 #include "../include/chatServer.hpp"
 
 chatServer::chatServer():
@@ -22,16 +23,29 @@ chatServer::chatServer():
     if (listen(serverSocket, SOMAXCONN) == -1){ // sets the socket to listen for incoming clients
         throw std::runtime_error("Server failed to listen");
     }
+    
+    logFile.open(logFilePath);
+    if (!logFile.is_open()){
+        throw std::runtime_error("Could not open log file");
+    }
 }
 
 chatServer::~chatServer(){
-    // clean up sockets
+    // close socket and log file
     close(serverSocket);
+    logFile.close();
 }
 
 void chatServer::run(){
     while(true){
-        
+        pollfd cinFD{STDIN_FILENO, POLLIN, 0}; // create file descriptor for std::cin
+        if (poll(&cinFD, 1, 0)){
+            std::string input{};
+            std::getline(std::cin, input);
+            if (input == "exit()"){
+                break;
+            }
+        }
         if (poll(&listenFD, 1, 0)){// checks if it was one of the FDs that had an event
             addClient();                                                         
         }
@@ -68,7 +82,7 @@ void chatServer::addClient(){
     
     std::string notificationMessage{clientList.back().username};
     notificationMessage.append(" has entered the chat");
-    messageProtocol payload{messageProtocol::messageType::chatRm, "Main", "Server", notificationMessage};
+    messageProtocol payload{messageProtocol::messageType::notify, "Main", "Server", notificationMessage};
     for (auto client = clientList.begin(); client != clientList.end() - 1; ++client){
         send(client->clientFD.fd, payload.mergedData.data(), payload.mergedData.size() + 1, 0);
     }
@@ -76,10 +90,10 @@ void chatServer::addClient(){
 
 void chatServer::removeClient(const chatClient& client){
     std::cout << client.username << " has disconnected" << std::endl;
-    
+    // create notification that someone left and send to all users
     std::string notificationMessage{client.username};
     notificationMessage.append(" has left the chat");
-    messageProtocol payload{messageProtocol::messageType::chatRm, "Main", "Server", notificationMessage};
+    messageProtocol payload{messageProtocol::messageType::notify, "Main", "Server", notificationMessage};
     for (auto&& i: clientList){
         send(i.clientFD.fd, payload.mergedData.data(), payload.mergedData.size() + 1, 0);
     }
@@ -95,7 +109,13 @@ void chatServer::relayMessage(const chatClient& sender){ // only happens when me
     }
     
     if (message->recipient == "Main"){
-        std::cout << message->getMessageWithSender() << std::endl; // displays message server side if it wasn't a private message
+        // output chatroom messages serverside
+        auto currentTime {std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())};
+        std::cout << std::put_time(std::gmtime(&currentTime), "%H:%M ") << message->getMessageWithSender() << std::endl; // displays message server side if it wasn't a private message
+        
+        // add messages log file
+        logFile << std::ctime(&currentTime) << message->getMessageWithSender() << std::endl;
+        
         // loop through clientList to send message to each client
         for(auto&& client: clientList){
             if (client != sender){
