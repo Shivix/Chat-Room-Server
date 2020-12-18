@@ -1,6 +1,5 @@
 #include <iostream>
 #include "chatClient.hpp"
-#include <zconf.h>
 
 int main(){
 
@@ -12,13 +11,12 @@ int main(){
         
         client.connectToServer();
 
-        pollfd cinFD{STDIN_FILENO, POLLIN, 0};
         bool isRunning{true};
         while (isRunning){
-            if(poll(&client.serverFD, 1, 0) > 0){ // checks if the file descriptor for the listening socket has been set
+            if(poll(&client.fdSet[1], 1, 0) > 0){ // checks if the file descriptor for the listening socket has been set
                 client.receiveMessage();
             }
-            if (poll(&cinFD, 1, 0)){
+            if (poll(&client.fdSet[0], 1, 0)){
                 std::string message;
                 std::getline(std::cin, message);
                 if (message == "exit()"){ // provides a way for the user to exit the program by typing exit()

@@ -6,10 +6,9 @@
 
 chatClient::chatClient(int serverSocket){
     
-    clientFD.fd = accept(serverSocket, reinterpret_cast<sockaddr*>(&clientAddress), &clientSize); // listens for and accepts incoming client request
-    clientFD.events = POLLIN;
+    clientFD = accept(serverSocket, reinterpret_cast<sockaddr*>(&clientAddress), &clientSize); // listens for and accepts incoming client request
     
-    if (clientFD.fd == -1){
+    if (clientFD == -1){
         throw std::runtime_error("Failed to connect client");
     }
     
@@ -28,13 +27,13 @@ chatClient::chatClient(int serverSocket){
 }
 
 chatClient::~chatClient(){
-    close(clientFD.fd);
+    close(clientFD);
 }
 
 chatClient::chatClient(chatClient&& other) noexcept: // move constructor must change the socket of moved object to prevent early closing
     host{other.host},
     service{other.service},
-    clientFD{std::exchange(other.clientFD, {-1, 0, 0})},
+    clientFD{std::exchange(other.clientFD, -1)},
     username{std::move(other.username)},
     clientAddress{other.clientAddress},
     clientSize{other.clientSize} {}
@@ -43,7 +42,7 @@ chatClient& chatClient::operator=(chatClient&& other) noexcept {
     if(this != &other){
         host = other.host;
         service = other.service;
-        clientFD = std::exchange(other.clientFD, {-1, 0, 0});
+        clientFD = std::exchange(other.clientFD, -1);
         username = std::move(other.username);
         clientAddress = other.clientAddress;
         clientSize = other.clientSize;
@@ -55,9 +54,9 @@ void chatClient::setUsername(){
     std::string usernameBuffer{};
     do{
         std::string buffer{};
-        auto usernameSize{recv(clientFD.fd, buffer.data(), 20, MSG_PEEK)};
+        auto usernameSize{recv(clientFD, buffer.data(), 20, MSG_PEEK)};
         buffer.resize(usernameSize);
-        if (recv(clientFD.fd, buffer.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters
+        if (recv(clientFD, buffer.data(), usernameSize, 0) < 1){ // receive username, maximum 50 characters
             throw std::runtime_error("Could not receive username");
         }
         usernameBuffer += buffer;

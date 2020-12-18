@@ -12,24 +12,24 @@
 #include <optional>
 #include <fstream>
 #include <filesystem>
-
+#include <unistd.h>
 
 class chatServer{ 
-    
     static constexpr uint16_t port{12345};
     static constexpr size_t maxMessageSize{2048};
-    const int serverSocket{socket(PF_INET, SOCK_STREAM, 0)}; // endpoint for all incoming and outgoing data -- TCP to avoid partial messages being received
 
     const std::string_view serverIP{"127.0.0.1"}; // currently localhost 
     sockaddr_in serverAddress{}; // struct with address info to bind the socket
 
     std::vector<chatClient> clientList;
 
-    pollfd listenFD; // file descriptor to store events associated with the listening socket
+    pollfd listenFD{pollfd{socket(PF_INET, SOCK_STREAM, 0), POLLIN, 0}}; // file descriptor to store events associated with the listening socket
+    pollfd cinFD{STDIN_FILENO, POLLIN, 0};
     
     const std::filesystem::path logFilePath{"log.txt"};
     std::ofstream logFile;
-    
+    std::vector<pollfd> fdSet{};
+
 public:
     chatServer();
     ~chatServer();

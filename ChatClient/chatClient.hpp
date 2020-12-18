@@ -5,6 +5,8 @@
 #include <string>
 #include <poll.h>
 #include "../MessageProtocol/messageProtocol.hpp"
+#include <array>
+#include <unistd.h>
 
 class chatClient{
     
@@ -16,8 +18,8 @@ class chatClient{
 
 public:
     std::string activeChatRoom{"Main"};
-    pollfd serverFD{socket(PF_INET, SOCK_STREAM, 0), POLLIN, 0};
-    
+    std::array<pollfd, 2> fdSet{pollfd{STDIN_FILENO, POLLIN, 0}, {socket(PF_INET, SOCK_STREAM, 0), POLLIN, 0}};
+    const int serverFD{fdSet[1].fd};
 public:
     chatClient();
     ~chatClient();

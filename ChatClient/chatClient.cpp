@@ -13,29 +13,29 @@ chatClient::chatClient(){
 
     setUsername();
     
-    if(serverFD.fd < 0){
+    if(serverFD < 0){
         throw std::runtime_error("Failed initialize client");
     }
 }
 
 void chatClient::connectToServer() const{
-    if (connect(serverFD.fd, reinterpret_cast<const sockaddr*>(&serverAddress), sizeof(serverAddress)) == -1){
+    if (connect(serverFD, reinterpret_cast<const sockaddr*>(&serverAddress), sizeof(serverAddress)) == -1){
         throw std::runtime_error("Failed connect to server");
     }
     const messageProtocol payload{messageProtocol::messageType::notify, "Server", username, username};
-    send(serverFD.fd, payload.mergedData.data(), payload.mergedData.size(), 0);
+    send(serverFD, payload.mergedData.data(), payload.mergedData.size(), 0);
     receiveMessage(); // receive confirmation message from server will throw if not received
 }
 
 chatClient::~chatClient(){
-    close(serverFD.fd);
+    close(serverFD);
 }
 
 void chatClient::sendMessage(messageProtocol::messageType type, const std::string& chatBuffer, const std::string& recipient) const{
     
     const messageProtocol message{type, recipient, username, chatBuffer};
     
-    if (send(serverFD.fd, message.mergedData.data(), message.mergedData.size(), 0) == -1){
+    if (send(serverFD, message.mergedData.data(), message.mergedData.size(), 0) == -1){
         throw std::runtime_error("Failed to send message");
     }
 }
@@ -44,9 +44,9 @@ void chatClient::receiveMessage() const{
     std::string messageBuffer{};
     
     do{
-        auto bytesReceived{recv(serverFD.fd, messageBuffer.data(), maxMessageSize, MSG_PEEK)};
+        auto bytesReceived{recv(serverFD, messageBuffer.data(), maxMessageSize, MSG_PEEK)};
         std::string tempBuffer(bytesReceived, '\0');
-        recv(serverFD.fd, tempBuffer.data(), bytesReceived, 0);
+        recv(serverFD, tempBuffer.data(), bytesReceived, 0);
         
         if (bytesReceived == 0){
             throw std::runtime_error("You have been disconnected from the server");

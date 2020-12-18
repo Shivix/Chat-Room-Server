@@ -24,11 +24,11 @@ public:
     }
 
     constexpr bool operator==(const chatClient& other) const{
-        return clientFD.fd == other.clientFD.fd;
+        return clientFD == other.clientFD;
     }
     
     void setUsername();
-    pollfd clientFD{};
+    int clientFD;
     std::string username{};
 private:
     sockaddr_in clientAddress{};
