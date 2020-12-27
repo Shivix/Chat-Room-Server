@@ -17,3 +17,7 @@ set(INCLUDE
         ../MessageProtocol/messageProtocol.hpp)
 
 add_executable(ChatServer ${SRC} ${INCLUDE})
+
+if ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT MINGW) AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0))
+    target_link_libraries(ChatServer -lstdc++fs)
+endif()
