@@ -49,7 +49,7 @@ void chatServer::run(){
                 std::string input{};
                 std::getline(std::cin, input);
                 if (input == "exit()"){
-                    break;
+                    return;
                 }
             }
             else if (fdSet[i].fd == listenFD.fd && fdSet[i].revents != 0){// checks if it was one of the FDs that had an event
