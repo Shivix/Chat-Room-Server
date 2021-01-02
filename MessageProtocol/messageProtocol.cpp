@@ -82,10 +82,6 @@ bool messageProtocol::verifyPayload(std::string payload){
     });
     size_t splitterPos{payload.find(splitter)}; // find the position of the first splitter to ignore the characters of the number showing the length
     size_t expectedLength = std::atoi(payload.substr(0, splitterPos).data());
-    if (payload.size() - splitterPos == expectedLength + typeLength + 4){ // checks the size after the length considering the 4 splitters
-        return true;
-    }
-    else{
-        return false;
-    }
+    
+    return (payload.size() - splitterPos) == (expectedLength + typeLength + 4); // checks the size after the length considering the 4 splitters
 }
