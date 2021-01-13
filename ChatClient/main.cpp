@@ -4,7 +4,7 @@
 int main(){
 
     try{
-    chatClient client{};
+        chatClient client{};
         std::cout << "Type exit() to quit the program\n"
                      /*"Type ! followed by a chat room name to join a specific chatroom\n"*/
                      "Type / followed by a username to send a private message" << std::endl;
@@ -13,10 +13,15 @@ int main(){
 
         bool isRunning{true};
         while (isRunning){
-            if(poll(&client.fdSet[1], 1, 0) > 0){ // checks if the file descriptor for the listening socket has been set
+            int numberSet{poll(client.fdSet.data(), client.fdSet.size(), -1)};
+
+            if(numberSet == -1){
+                throw std::runtime_error("Error occurred while polling file descriptors");
+            }
+            if(client.fdSet[1].revents != 0){ // checks if the file descriptor for the listening socket has been set
                 client.receiveMessage();
             }
-            if (poll(&client.fdSet[0], 1, 0)){
+            if (client.fdSet[0].revents != 0){
                 std::string message;
                 std::getline(std::cin, message);
                 if (message == "exit()"){ // provides a way for the user to exit the program by typing exit()
@@ -34,11 +39,9 @@ int main(){
                 }
             }
         }
-    
     }
     catch(std::exception& exception){
         std::cerr << exception.what() << std::endl;
-        
         return -1;
     }
     return 0;
