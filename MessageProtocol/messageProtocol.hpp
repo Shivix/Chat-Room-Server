@@ -13,15 +13,14 @@ public:
     };
     static constexpr size_t typeLength{6};
 
-public:
     messageType type;
     std::string recipient;
     std::string sender;
     std::string message;
     size_t length;
+    std::string mergedData;
     
 public:
-    std::string mergedData;
     messageProtocol(messageType, std::string, std::string, std::string); // constructor for creating message based on seperate data AND one for creating seperate data based on string
     explicit messageProtocol(std::string);
     [[nodiscard]] std::string getMessageWithSender() const;

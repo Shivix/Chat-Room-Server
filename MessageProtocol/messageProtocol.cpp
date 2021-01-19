@@ -77,9 +77,7 @@ std::string messageProtocol::getMessageWithSender() const{
 }
 
 bool messageProtocol::verifyPayload(std::string payload){
-    std::erase_if(payload, [](auto element){
-        return element == '\0';
-    });
+    std::erase(payload,'\0');
     size_t splitterPos{payload.find(splitter)}; // find the position of the first splitter to ignore the characters of the number showing the length
     size_t expectedLength = std::atoi(payload.substr(0, splitterPos).data());
     
